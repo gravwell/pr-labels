@@ -1,19 +1,31 @@
-import * as core from '@actions/core'
-import {wait} from './wait'
+import * as core from '@actions/core';
+import { handlePR } from './lib/handle-pr';
+import { handlePush } from './lib/handle-push';
 
+/** Entrypoint */
 async function run(): Promise<void> {
-  try {
-    const ms: string = core.getInput('milliseconds')
-    core.debug(`Waiting ${ms} milliseconds ...`) // debug is only output if you set the secret `ACTIONS_STEP_DEBUG` to true
+	try {
+		if (!process.env.INPUT_GITHUB_TOKEN) {
+			core.setFailed('Missing GITHUB_TOKEN variable');
+			return;
+		}
 
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
-
-    core.setOutput('time', new Date().toTimeString())
-  } catch (error) {
-    if (error instanceof Error) core.setFailed(error.message)
-  }
+		switch (process.env.GITHUB_EVENT_NAME) {
+			case 'pull_request_target':
+				core.info('PR: Checking PR labels...');
+				await handlePR();
+				break;
+			case 'push':
+				core.info('Push: Checking PR labels...');
+				await handlePush();
+				break;
+			default:
+				core.setFailed(`Unable to run on a ${process.env.GITHUB_EVENT_NAME} event`);
+				break;
+		}
+	} catch (err) {
+		core.setFailed(err instanceof Error ? err : `${err}`);
+	}
 }
 
-run()
+run();

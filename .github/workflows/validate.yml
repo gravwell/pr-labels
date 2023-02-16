@@ -1,0 +1,14 @@
+name: 'validate'
+on: # Check PR labels whenever a PR is updated or a brach is pushed to
+  pull_request_target:
+  push:
+
+jobs:
+  test:
+    name: Update PR Labels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
